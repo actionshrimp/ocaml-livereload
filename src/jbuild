@@ -1,0 +1,7 @@
+(jbuild_version 1)
+
+
+(library
+ ((name livereload)
+  (public_name livereload)
+  (libraries (containers websocket-lwt.cohttp))))
