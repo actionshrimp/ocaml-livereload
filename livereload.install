@@ -1,0 +1,18 @@
+lib: [
+  "_build/install/default/lib/livereload/META" {"META"}
+  "_build/install/default/lib/livereload/opam" {"opam"}
+  "_build/install/default/lib/livereload/livereload.cmi"
+  "_build/install/default/lib/livereload/livereload.cmx"
+  "_build/install/default/lib/livereload/livereload.cmt"
+  "_build/install/default/lib/livereload/livereload.ml"
+  "_build/install/default/lib/livereload/livereload.cma"
+  "_build/install/default/lib/livereload/livereload.cmxa"
+  "_build/install/default/lib/livereload/livereload.a"
+  "_build/install/default/lib/livereload/livereload.cmxs"
+]
+bin: [
+  "_build/install/default/bin/test_server" {"test_server"}
+]
+share: [
+  "_build/install/default/share/livereload/livereload.js"
+]

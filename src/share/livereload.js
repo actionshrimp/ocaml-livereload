@@ -554,17 +554,6 @@
   var PROTOCOL_6, PROTOCOL_7, Parser, ProtocolError,
     __indexOf = [].indexOf || function(item) { for (var i = 0, l = this.length; i < l; i++) { if (i in this && this[i] === item) return i; } return -1; };
 
-  exports.PROTOCOL_6 = PROTOCOL_6 = 'http://livereload.com/protocols/official-6';
-
-  exports.PROTOCOL_7 = PROTOCOL_7 = 'http://livereload.com/protocols/official-7';
-
-  exports.ProtocolError = ProtocolError = (function() {
-    function ProtocolError(reason, data) {
-      this.message = "LiveReload protocol error (" + reason + ") after receiving data: \"" + data + "\".";
-    }
-
-    return ProtocolError;
-
   })();
 
   exports.Parser = Parser = (function() {
