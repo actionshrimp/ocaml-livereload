@@ -33,6 +33,7 @@ let handler
   match Uri.path uri with
   | "/livereload.js" ->
     Cohttp_lwt_unix.Server.respond_string
+      ~headers: (Cohttp.Header.add (Cohttp.Header.init ()) "Content-Type" "application/javascript")
     ~status:`OK
     ~body: [%blob "static/livereload.js"]
     ()
