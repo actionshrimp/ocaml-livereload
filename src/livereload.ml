@@ -94,11 +94,11 @@ let make_handler
 
 
 let make_watcher
-    (paths : (string * string) list)
+    (path_configs : (string * string) list)
     (change_cb : string -> unit Lwt.t)
   : unit Lwt.t =
   Lwt_inotify.create () >>= fun inotify ->
-  paths
+  path_configs
   |> CCList.map (fun (fs_path, server_base) ->
       Lwt_inotify.add_watch inotify fs_path [Inotify.S_Attrib; Inotify.S_Modify]
       >>= fun _ -> Lwt.return ()
@@ -107,5 +107,15 @@ let make_watcher
   let rec go () =
     Lwt_inotify.read inotify >>= fun event ->
     Lwt_io.eprintf "%s%!" (Inotify.string_of_event event) >>= fun () ->
-    go ()
+    let watch, _, _, fname_opt = event in
+    let i = (Inotify.int_of_watch watch) - 1 in
+    begin
+      match (CCList.get_at_idx i path_configs, fname_opt) with
+      | (Some (_, server_base), Some fname) ->
+        let server_path = server_base ^ "/" ^ fname in
+        Lwt_io.eprintf "%s%!" server_path >>= fun _ ->
+        change_cb server_path
+      | _ -> Lwt.return ()
+    end;
+    >>= fun _ -> go ()
   in go ()
