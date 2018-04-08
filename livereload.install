@@ -13,6 +13,3 @@ lib: [
 bin: [
   "_build/install/default/bin/test_server" {"test_server"}
 ]
-share: [
-  "_build/install/default/share/livereload/livereload.js"
-]

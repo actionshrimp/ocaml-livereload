@@ -8,6 +8,9 @@ type msg =
   ; liveCSS: bool
   }
 
+(* let livereload_js = *)
+(*   CCIO.(with_in (Filename.concat "day09.txt") read_lines_l) *)
+
 let handler
     (conn : Conduit_lwt_unix.flow * Cohttp.Connection.t)
     (req  : Cohttp_lwt_unix.Request.t)
@@ -17,34 +20,12 @@ let handler
         "[CONN] %s\n%!" (Cohttp.Connection.to_string @@ snd conn)
   >>= fun _ ->
   let uri = Cohttp.Request.uri req in
+  let _ = Lwt_io.eprintf "[PATH] %s\n%!" (Uri.path uri) in
   match Uri.path uri with
-  | "/" ->
-    Lwt_io.eprintf "[PATH] /\n%!"
-    >>= fun () ->
+  | "/livereload.js" ->
     Cohttp_lwt_unix.Server.respond_string
     ~status:`OK
-    ~body: {|
-        <html>
-        <head>
-            <meta charset="utf-8">
-            <script src="//code.jquery.com/jquery-1.11.3.min.js"></script>
-            <script>
-                $(window).on('load', function(){
-                    ws = new WebSocket('ws://localhost:7777/ws');
-                    ws.onmessage = function(x) {
-                        console.log(x.data);
-                        var m = "<- Pong " + parseInt((x.data.substring(8)) - 1);
-                        $('#msg').html("<p>" + x.data + "</p><p>" + m + "</p>");
-                        ws.send(m);
-                    };
-                });
-        </script>
-        </head>
-        <body>
-            <div id='msg'></div>
-        </body>
-        </html>
-        |}
+    ~body: [%blob "static/livereload.js"]
     ()
   | "/ws" ->
     Lwt_io.eprintf "[PATH] /ws\n%!"

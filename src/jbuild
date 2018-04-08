@@ -4,8 +4,6 @@
 (library
  ((name livereload)
   (public_name livereload)
+  (preprocess (pps (ppx_blob)))
+  (preprocessor_deps ((file static/livereload.js)))
   (libraries (containers websocket-lwt.cohttp))))
-
-(install
- ((section share)
-  (files (share/livereload.js))))
