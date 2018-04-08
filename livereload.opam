@@ -13,4 +13,5 @@ depends: [
   "containers"
   "websocket"
   "websocket-lwt"
+  "ppx_blob"
 ]
