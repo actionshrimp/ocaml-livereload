@@ -34,21 +34,21 @@ let handler
   | "/livereload.js" ->
     Cohttp_lwt_unix.Server.respond_string
       ~headers: (Cohttp.Header.add (Cohttp.Header.init ()) "Content-Type" "application/javascript")
-    ~status:`OK
-    ~body: [%blob "static/livereload.js"]
-    ()
+      ~status:`OK
+      ~body: [%blob "static/livereload.js"]
+      ()
   | "/livereload" ->
     Lwt_io.eprintf "[livereload] /livereload\n%!"
     >>= fun () ->
     Cohttp_lwt.Body.drain_body body
     >>= fun () ->
     Websocket_cohttp_lwt.upgrade_connection req (fst conn) (
-        fun f ->
-            match f.opcode with
-            | Opcode.Close ->
-                Printf.eprintf "[RECV] CLOSE\n%!"
-            | _ ->
-                Printf.eprintf "[RECV] %s\n%!" f.content
+      fun f ->
+        match f.opcode with
+        | Opcode.Close ->
+          Printf.eprintf "[RECV] CLOSE\n%!"
+        | _ ->
+          Printf.eprintf "[RECV] %s\n%!" f.content
     )
     >>= fun (resp, body, frames_out_fn) ->
     (* send a message to the client every second *)
