@@ -9,11 +9,14 @@ let index = Printf.sprintf {|
 <head>
     <meta charset="utf-8">
     <script src="http://localhost:%d/livereload.js"></script>
+    <link rel="stylesheet" href="/main.css">
 </head>
 <body>
     <div id='msg'></div>
 </body>
 </html> |} port
+
+let cssmain = "body { background-color: red }"
 
 let handler
     (conn : Conduit_lwt_unix.flow * Cohttp.Connection.t)
@@ -28,6 +31,12 @@ let handler
     (fun conn req body ->
        let uri = Cohttp.Request.uri req in
        match Uri.path uri with
+       | "/main.css" ->
+         Cohttp_lwt_unix.Server.respond_string
+           ~headers: (Cohttp.Header.add (Cohttp.Header.init ()) "Content-Type" "text/css")
+           ~status:`OK
+           ~body: cssmain
+           ()
        | "/" ->
          Cohttp_lwt_unix.Server.respond_string
            ~status:`OK
