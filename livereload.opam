@@ -15,4 +15,5 @@ depends: [
   "websocket-lwt"
   "ppx_blob"
   "inotify"
+  "opium" {test}
 ]
