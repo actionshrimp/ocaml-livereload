@@ -27,11 +27,16 @@ module ByConn = CCMap.Make(struct
     let compare = Cohttp.Connection.compare
   end)
 
+
+
 let make_handler
+    ?(debug=false)
     (next : Conduit_lwt_unix.flow * Cohttp.Connection.t -> Cohttp_lwt_unix.Request.t -> Cohttp_lwt.Body.t  -> (Cohttp.Response.t * Cohttp_lwt.Body.t) Lwt.t)
   : ((string -> unit Lwt.t) *
      (Conduit_lwt_unix.flow * Cohttp.Connection.t -> Cohttp_lwt_unix.Request.t -> Cohttp_lwt.Body.t -> (Cohttp.Response.t * Cohttp_lwt.Body.t) Lwt.t))
   =
+  let debug_log (msg : string) = if debug then print_endline msg else () in
+  let debug_log_lwt (msg : string) = if debug then Lwt_io.eprint msg else Lwt.return () in
   let conn_update_handlers = Lwt_mvar.create ByConn.empty in
   (fun path ->
      Lwt_mvar.take conn_update_handlers
@@ -40,8 +45,8 @@ let make_handler
      >>= fun () ->
      Lwt.return @@
      (handlers |> ByConn.iter (fun c handler ->
-          Printf.eprintf "[livereload] Telling %s about update to %s\n%!"
-            (Cohttp.Connection.to_string c) path;
+          debug_log (Printf.sprintf "[livereload] Telling %s about update to %s\n%!"
+                       (Cohttp.Connection.to_string c) path);
           handler @@ Some (Frame.create ~content:(reload path) ())
         ));
   ),
@@ -50,7 +55,7 @@ let make_handler
      let uri = Cohttp.Request.uri req in
      match Uri.path uri with
      | "/livereload.js" ->
-       Lwt_io.eprintf "[livereload] /livereload.js\n%!"
+       debug_log_lwt (Printf.sprintf "[livereload] /livereload.js\n%!")
        >>= fun () ->
        Cohttp_lwt_unix.Server.respond_string
          ~headers: (Cohttp.Header.add (Cohttp.Header.init ()) "Content-Type" "application/javascript")
@@ -58,7 +63,7 @@ let make_handler
          ~body: [%blob "../static/livereload.js"]
          ()
      | "/livereload" ->
-       Lwt_io.eprintf "[livereload] /livereload\n%!"
+       debug_log_lwt (Printf.sprintf "[livereload] /livereload\n%!")
        >>= fun () ->
        Cohttp_lwt.Body.drain_body body
        >>= fun () ->
@@ -66,21 +71,20 @@ let make_handler
          fun f ->
            match f.opcode with
            | Opcode.Close ->
-             Printf.eprintf "[RECV] CLOSE\n%!";
              Lwt.async (fun () ->
-                 Lwt_io.eprintf "[livereload] Removing client %s \n%!"
-                   (snd conn |> Cohttp.Connection.to_string) >>= fun () ->
+                 debug_log_lwt (Printf.sprintf "[livereload] Removing client %s \n%!" (snd conn |> Cohttp.Connection.to_string))
+                 >>= fun () ->
                  Lwt_mvar.take conn_update_handlers
                  >>= fun handlers ->
                  let updated = ByConn.remove (snd conn) handlers in
                  Lwt_mvar.put conn_update_handlers updated)
 
-           | _ ->
-             Printf.eprintf "[RECV] %s\n%!" f.content
+           | _ -> ()
        )
        >>= fun (resp, body, frames_out_fn) ->
-       Lwt_io.eprintf "[livereload] Adding client %s \n%!"
-         (snd conn |> Cohttp.Connection.to_string) >>= fun () ->
+       debug_log_lwt (Printf.sprintf "[livereload] Adding client %s \n%!"
+                        (snd conn |> Cohttp.Connection.to_string))
+       >>= fun () ->
        Lwt_mvar.take conn_update_handlers
        >>= fun handlers ->
        let updated = (ByConn.add (snd conn) frames_out_fn handlers) in
@@ -94,9 +98,11 @@ let make_handler
 
 
 let make_watcher
+    ?(debug=false)
     (path_configs : (string * string) list)
     (change_cb : string -> unit Lwt.t)
   : unit Lwt.t =
+  let debug_log_lwt (msg : string) = if debug then Lwt_io.eprint msg else Lwt.return () in
   Lwt_inotify.create () >>= fun inotify ->
   path_configs
   |> CCList.map (fun (fs_path, server_base) ->
@@ -106,14 +112,14 @@ let make_watcher
   |> Lwt.join >>= fun () ->
   let rec go () =
     Lwt_inotify.read inotify >>= fun event ->
-    Lwt_io.eprintf "%s%!" (Inotify.string_of_event event) >>= fun () ->
+    debug_log_lwt (Printf.sprintf "[livereload] %s%!" (Inotify.string_of_event event)) >>= fun () ->
     let watch, _, _, fname_opt = event in
     let i = (Inotify.int_of_watch watch) - 1 in
     begin
       match (CCList.get_at_idx i path_configs, fname_opt) with
       | (Some (_, server_base), Some fname) ->
         let server_path = server_base ^ "/" ^ fname in
-        Lwt_io.eprintf "%s%!" server_path >>= fun _ ->
+        debug_log_lwt (Printf.sprintf "[livereload] %s%!" server_path) >>= fun _ ->
         change_cb server_path
       | _ -> Lwt.return ()
     end;
