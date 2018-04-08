@@ -5,3 +5,9 @@
   (public_name test_server)
   (modules (test_server))
   (libraries (livereload websocket-lwt.cohttp))))
+
+(executable
+ ((name test_files_server)
+  (public_name test_files_server)
+  (modules (test_files_server))
+  (libraries (livereload websocket-lwt.cohttp inotify.lwt))))

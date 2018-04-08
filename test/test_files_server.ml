@@ -17,34 +17,19 @@ let index = Printf.sprintf {|
 </body>
 </html> |} port
 
-let cssmain color = Printf.sprintf "body { background-color: %s }" color
-let jsmain log_msg = Printf.sprintf "console.log('%s')" log_msg
-
 let make_handler () =
-  let css_content = Lwt_mvar.create (cssmain "red") in
-  let js_content = Lwt_mvar.create (jsmain "one") in
   let next = fun conn req body ->
         let uri = Cohttp.Request.uri req in
         match Uri.path uri with
         | "/static/main.css" ->
-          Lwt_mvar.take css_content
-          >>= fun content ->
-          Lwt_mvar.put css_content content
-          >>= fun () ->
-          Cohttp_lwt_unix.Server.respond_string
+          Cohttp_lwt_unix.Server.respond_file
             ~headers: (Cohttp.Header.add (Cohttp.Header.init ()) "Content-Type" "text/css")
-            ~status:`OK
-            ~body: content
+            ~fname:"test/static/main.css"
             ()
         | "/static/main.js" ->
-          Lwt_mvar.take js_content
-          >>= fun content ->
-          Lwt_mvar.put js_content content
-          >>= fun () ->
-          Cohttp_lwt_unix.Server.respond_string
+          Cohttp_lwt_unix.Server.respond_file
             ~headers: (Cohttp.Header.add (Cohttp.Header.init ()) "Content-Type" "application/javascript")
-            ~status:`OK
-            ~body: content
+            ~fname:"test/static/main.js"
             ()
         | "/" ->
           Cohttp_lwt_unix.Server.respond_string
@@ -61,34 +46,8 @@ let make_handler () =
   in
   let send_update_fn, handler = Livereload.make_handler next in
   let _ =
-    let rec gocss (c : string) =
-      Lwt_unix.sleep 3.
-      >>= fun () ->
-      Lwt_io.eprintf "[SERV] Switching color to %s\n%!" c
-      >>= fun () ->
-      Lwt_mvar.take css_content
-      >>= fun content ->
-      Lwt_mvar.put css_content (cssmain c)
-      >>= fun () ->
-      send_update_fn "/main.css"
-      >>= fun () ->
-      gocss (if c = "red" then "green" else "red")
-    in
-    let rec gojs (msg : string) =
-      Lwt_unix.sleep 10.
-      >>= fun () ->
-      Lwt_io.eprintf "[SERV] Switching msg to %s\n%!" msg
-      >>= fun () ->
-      Lwt_mvar.take js_content
-      >>= fun content ->
-      Lwt_mvar.put js_content (jsmain msg)
-      >>= fun () ->
-      send_update_fn "/main.js"
-      >>= fun () ->
-      gojs (if msg = "one" then "two" else "one")
-    in
-    Lwt.async (fun () -> (gocss "green"));
-    Lwt.async (fun () -> (gojs "two"));
+    let watcher = Livereload.make_watcher ["test/static", "/static"] send_update_fn in
+    Lwt.async (fun _ -> watcher)
   in
   fun conn req body ->
     Lwt_io.eprintf "[CONN] %s\n%!" (Cohttp.Connection.to_string @@ snd conn)

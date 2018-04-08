@@ -91,3 +91,21 @@ let make_handler
        >>= fun () ->
        Lwt.return (resp, (body :> Cohttp_lwt.Body.t))
      | _ -> next conn req body)
+
+
+let make_watcher
+    (paths : (string * string) list)
+    (change_cb : string -> unit Lwt.t)
+  : unit Lwt.t =
+  Lwt_inotify.create () >>= fun inotify ->
+  paths
+  |> CCList.map (fun (fs_path, server_base) ->
+      Lwt_inotify.add_watch inotify fs_path [Inotify.S_Attrib; Inotify.S_Modify]
+      >>= fun _ -> Lwt.return ()
+    )
+  |> Lwt.join >>= fun () ->
+  let rec go () =
+    Lwt_inotify.read inotify >>= fun event ->
+    Lwt_io.eprintf "%s%!" (Inotify.string_of_event event) >>= fun () ->
+    go ()
+  in go ()

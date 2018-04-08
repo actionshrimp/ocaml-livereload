@@ -6,4 +6,4 @@
   (public_name livereload)
   (preprocess (pps (ppx_blob)))
   (preprocessor_deps ((file ../static/livereload.js)))
-  (libraries (containers websocket-lwt.cohttp))))
+  (libraries (containers websocket-lwt.cohttp inotify.lwt))))
