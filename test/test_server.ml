@@ -59,7 +59,7 @@ let make_handler () =
             ~body:(Sexplib.Sexp.to_string_hum (Cohttp.Request.sexp_of_t req))
             ()
   in
-  let send_update_fn, handler = Livereload.make_handler next in
+  let send_update_fn, handler = Livereload.make_raw_handler next in
   let _ =
     let rec gocss (c : string) =
       Lwt_unix.sleep 3.

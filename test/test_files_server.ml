@@ -44,11 +44,7 @@ let make_handler () =
             ~body:(Sexplib.Sexp.to_string_hum (Cohttp.Request.sexp_of_t req))
             ()
   in
-  let send_update_fn, handler = Livereload.make_handler next in
-  let _ =
-    let watcher = Livereload.make_watcher ["test/static", "/static"] send_update_fn in
-    Lwt.async (fun _ -> watcher)
-  in
+  let handler = Livereload.make_handler [{ fs_dir = "test/static"; server_base = "/static" }] next in
   fun conn req body ->
     Lwt_io.eprintf "[CONN] %s\n%!" (Cohttp.Connection.to_string @@ snd conn)
     >>= fun _ ->

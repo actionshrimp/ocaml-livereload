@@ -28,12 +28,12 @@ module ByConn = CCMap.Make(struct
   end)
 
 
+type handler = Conduit_lwt_unix.flow * Cohttp.Connection.t -> Cohttp_lwt_unix.Request.t -> Cohttp_lwt.Body.t -> (Cohttp.Response.t * Cohttp_lwt.Body.t) Lwt.t
 
-let make_handler
+let make_raw_handler
     ?(debug=false)
-    (next : Conduit_lwt_unix.flow * Cohttp.Connection.t -> Cohttp_lwt_unix.Request.t -> Cohttp_lwt.Body.t  -> (Cohttp.Response.t * Cohttp_lwt.Body.t) Lwt.t)
-  : ((string -> unit Lwt.t) *
-     (Conduit_lwt_unix.flow * Cohttp.Connection.t -> Cohttp_lwt_unix.Request.t -> Cohttp_lwt.Body.t -> (Cohttp.Response.t * Cohttp_lwt.Body.t) Lwt.t))
+    (next : handler)
+  : ((string -> unit Lwt.t) * handler)
   =
   let debug_log (msg : string) = if debug then print_endline msg else () in
   let debug_log_lwt (msg : string) = if debug then Lwt_io.eprint msg else Lwt.return () in
@@ -96,17 +96,21 @@ let make_handler
        Lwt.return (resp, (body :> Cohttp_lwt.Body.t))
      | _ -> next conn req body)
 
+type path_config =
+  { fs_dir : string
+  ; server_base : string
+  }
 
 let make_watcher
     ?(debug=false)
-    (path_configs : (string * string) list)
+    (path_configs : path_config list)
     (change_cb : string -> unit Lwt.t)
   : unit Lwt.t =
   let debug_log_lwt (msg : string) = if debug then Lwt_io.eprint msg else Lwt.return () in
   Lwt_inotify.create () >>= fun inotify ->
   path_configs
-  |> CCList.map (fun (fs_path, server_base) ->
-      Lwt_inotify.add_watch inotify fs_path [Inotify.S_Attrib; Inotify.S_Modify]
+  |> CCList.map (fun {fs_dir; server_base} ->
+      Lwt_inotify.add_watch inotify fs_dir [Inotify.S_Attrib; Inotify.S_Modify]
       >>= fun _ -> Lwt.return ()
     )
   |> Lwt.join >>= fun () ->
@@ -117,7 +121,7 @@ let make_watcher
     let i = (Inotify.int_of_watch watch) - 1 in
     begin
       match (CCList.get_at_idx i path_configs, fname_opt) with
-      | (Some (_, server_base), Some fname) ->
+      | (Some {server_base}, Some fname) ->
         let server_path = server_base ^ "/" ^ fname in
         debug_log_lwt (Printf.sprintf "[livereload] %s%!" server_path) >>= fun _ ->
         change_cb server_path
@@ -125,3 +129,14 @@ let make_watcher
     end;
     >>= fun _ -> go ()
   in go ()
+
+let make_handler
+    ?(debug=false)
+    (path_configs : path_config list)
+    (next : handler)
+    : handler 
+    = let send_update_fn, handler = make_raw_handler ~debug next in
+    Lwt.async (fun _ -> make_watcher ~debug path_configs send_update_fn);
+    handler
+
+
