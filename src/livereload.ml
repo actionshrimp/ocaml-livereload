@@ -35,7 +35,7 @@ let handler
     Cohttp_lwt_unix.Server.respond_string
       ~headers: (Cohttp.Header.add (Cohttp.Header.init ()) "Content-Type" "application/javascript")
       ~status:`OK
-      ~body: [%blob "static/livereload.js"]
+      ~body: [%blob "../static/livereload.js"]
       ()
   | "/livereload" ->
     Lwt_io.eprintf "[livereload] /livereload\n%!"
