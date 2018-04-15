@@ -11,3 +11,9 @@
   (public_name test_files_server)
   (modules (test_files_server))
   (libraries (livereload websocket-lwt.cohttp inotify.lwt))))
+
+(executable
+ ((name test_opium_server)
+  (public_name test_opium_server)
+  (modules (test_opium_server))
+  (libraries (livereload websocket-lwt.cohttp inotify.lwt opium))))
