@@ -2,10 +2,14 @@
 
 Livereload server in ocaml that can live in your webserver process.
 
-## TODO
+## Setup
 
-- [ ] Work out the best way to hook this into e.g. an [opium](https://github.com/rgrinberg/opium) middleware or to live alongside opium in the http server.
-- [ ] Improve file watching API to handle single files and make sure path mapping works correctly
-- [x] Wire together file watcher and reload handler into a single entrypoint
+- Create a livereload handler for your server process by calling `Livereload.make_handler` along with config about which files to watch.
+- Hook up the handler so it's called as part of your server callback.
+- Add a script tag to your markup to load the `livereload.js` script served by the created handler into the browser.
 
-See `test/test_files_server.ml` for an example of wiring with file watcher.
+## Examples
+
+See:
+- `test/test_files_server.ml` for an example of wiring with file watcher.
+- `test/test_opium_server.ml` for an example of wiring with an opium app, and opium static middleware. This requires calling through to some lower level opium funcitons at the minute as it requires information about the underlying connection for the websocket to work properly, which is not exposed by Opium currently.
