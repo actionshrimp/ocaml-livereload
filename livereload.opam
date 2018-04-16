@@ -7,13 +7,17 @@ homepage: ""
 bug-reports: ""
 license: ""
 dev-repo: ""
-build: [["jbuilder" "build" "-p" name "-j" jobs]]
+build: [
+  ["./configure"]
+  ["jbuilder" "build" "-p" name "-j" jobs]
+]
 depends: [
   "jbuilder" {build}
   "containers"
   "websocket"
   "websocket-lwt"
   "ppx_blob"
-  "inotify"
+  "inotify" { os = "linux" }
+  "osx-fsevents" { os = "osx" }
   "opium" {test}
 ]

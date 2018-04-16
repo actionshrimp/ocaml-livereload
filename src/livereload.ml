@@ -96,47 +96,12 @@ let make_raw_handler
        Lwt.return (resp, (body :> Cohttp_lwt.Body.t))
      | _ -> next conn req body)
 
-type path_config =
-  { fs_dir : string
-  ; server_base : string
-  }
-
-let make_watcher
-    ?(debug=false)
-    (path_configs : path_config list)
-    (change_cb : string -> unit Lwt.t)
-  : unit Lwt.t =
-  let debug_log_lwt (msg : string) = if debug then Lwt_io.eprint msg else Lwt.return () in
-  Lwt_inotify.create () >>= fun inotify ->
-  path_configs
-  |> CCList.map (fun {fs_dir; server_base} ->
-      Lwt_inotify.add_watch inotify fs_dir [Inotify.S_Attrib; Inotify.S_Modify]
-      >>= fun _ -> Lwt.return ()
-    )
-  |> Lwt.join >>= fun () ->
-  let rec go () =
-    Lwt_inotify.read inotify >>= fun event ->
-    debug_log_lwt (Printf.sprintf "[livereload] %s%!" (Inotify.string_of_event event)) >>= fun () ->
-    let watch, _, _, fname_opt = event in
-    let i = (Inotify.int_of_watch watch) - 1 in
-    begin
-      match (CCList.get_at_idx i path_configs, fname_opt) with
-      | (Some {server_base}, Some fname) ->
-        let server_path = server_base ^ "/" ^ fname in
-        debug_log_lwt (Printf.sprintf "[livereload] %s%!" server_path) >>= fun _ ->
-        change_cb server_path
-      | _ -> Lwt.return ()
-    end;
-    >>= fun _ -> go ()
-  in go ()
 
 let make_handler
     ?(debug=false)
-    (path_configs : path_config list)
+    (path_configs : Types.path_config list)
     (next : handler)
-    : handler 
+    : handler
     = let send_update_fn, handler = make_raw_handler ~debug next in
-    Lwt.async (fun _ -> make_watcher ~debug path_configs send_update_fn);
+    Lwt.async (fun _ -> Backend.make_watcher ~debug path_configs send_update_fn);
     handler
-
-
