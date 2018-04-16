@@ -7,10 +7,7 @@ homepage: ""
 bug-reports: ""
 license: ""
 dev-repo: ""
-build: [
-  ["./configure"]
-  ["jbuilder" "build" "-p" name "-j" jobs]
-]
+build: [["jbuilder" "build" "-p" name "-j" jobs]]
 depends: [
   "jbuilder" {build}
   "containers"

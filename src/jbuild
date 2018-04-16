@@ -6,4 +6,8 @@
   (public_name livereload)
   (preprocess (pps (ppx_blob)))
   (preprocessor_deps ((file ../static/livereload.js)))
-  (libraries (containers websocket-lwt.cohttp lwt inotify.lwt))))
+  (libraries (containers websocket-lwt.cohttp lwt
+              (select backend.ml from
+               (inotify.lwt -> backend_linux.ml)
+               (osx-fsevents -> backend_osx.ml))))))
+
