@@ -15,6 +15,6 @@ depends: [
   "websocket-lwt"
   "ppx_blob"
   "inotify" { os = "linux" }
-  "osx-fsevents" { os = "osx" }
+  "osx-fsevents" { os = "macos" }
   "opium" {test}
 ]
