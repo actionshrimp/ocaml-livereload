@@ -103,5 +103,10 @@ let make_handler
     (next : handler)
     : handler
     = let send_update_fn, handler = make_raw_handler ~debug next in
-    Lwt.async (fun _ -> Backend.make_watcher ~debug path_configs send_update_fn);
+    Lwt.async (fun () -> Backend.make_watcher ~debug path_configs send_update_fn);
+    Lwt.async (fun () ->
+        Lwt_unix.sleep 1.0 >>= fun _ ->
+        send_update_fn "/"
+      );
     handler
+
