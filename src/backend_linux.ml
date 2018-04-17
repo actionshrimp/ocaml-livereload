@@ -23,7 +23,7 @@ let make_watcher
       match (CCList.get_at_idx i path_configs, fname_opt) with
       | (Some {server_path}, Some fname) ->
         let server_path = server_path ^ "/" ^ fname in
-        debug_log_lwt (Printf.sprintf "[livereload] %s%!" server_path) >>= fun _ ->
+        debug_log_lwt (Printf.sprintf "[livereload (inotify)] %s%!" server_path) >>= fun _ ->
         change_cb server_path
       | _ -> Lwt.return ()
     end;
