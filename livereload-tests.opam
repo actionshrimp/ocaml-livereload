@@ -4,4 +4,6 @@ depends: [
   "jbuilder" {build}
   "livereload"
   "opium" {test}
+  "inotify" { os = "linux" }
+  "osx-fsevents" { os = "macos" }
 ]
