@@ -44,7 +44,7 @@ let make_handler () =
             ~body:(Sexplib.Sexp.to_string_hum (Cohttp.Request.sexp_of_t req))
             ()
   in
-  let handler = Livereload.make_handler [{ local_dir = "test/static"; server_path = "/static" }] next in
+  let handler = Livereload.make_handler ~debug:true [{ local_dir = "test/static"; server_path = "/static" }] next in
   fun conn req body ->
     Lwt_io.eprintf "[CONN] %s\n%!" (Cohttp.Connection.to_string @@ snd conn)
     >>= fun _ ->

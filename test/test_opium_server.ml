@@ -18,7 +18,7 @@ let index = Printf.sprintf {|
 
 let hello = get "/" (fun _ -> `String index |> respond')
 
-let lr_handler = Livereload.make_handler [{ local_dir = "test/static"; server_path = "/static" }]
+let lr_handler = Livereload.make_handler ~debug:true [{ local_dir = "test/static"; server_path = "/static" }]
 
 let app =
   let static = Middleware.static ~local_path:"test/static" ~uri_prefix:"/static" in
