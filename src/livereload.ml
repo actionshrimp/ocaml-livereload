@@ -116,14 +116,18 @@ let make_raw_handler
 
 let make_handler
     ?(debug=false)
+    ?restart_update_after
     (path_configs : Types.path_config list)
     (next : handler)
     : handler
     = let send_update_fn, handler = make_raw_handler ~debug next in
     Lwt.async (fun () -> Backend.make_watcher ~debug path_configs send_update_fn);
-    Lwt.async (fun () ->
-        Lwt_unix.sleep 2.0 >>= fun _ ->
-        send_update_fn "/"
-      );
+    let () = match restart_update_after with
+    | None -> ()
+    | Some t ->
+      Lwt.async (fun () ->
+          Lwt_unix.sleep t >>= fun _ ->
+          send_update_fn "/"
+        ) in
     handler
 
