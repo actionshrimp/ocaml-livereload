@@ -15,16 +15,15 @@ let make_watcher
   let stream = Fsevents_lwt.stream watcher in
   let run_loop_mode = Cf.RunLoop.Mode.Default in
 
-  let cb_f event =
+  let cb_f = ref (fun event ->
           (* TODO: handle path mapping back to server path *)
           let local_path = event.Fsevents_lwt.path in
           debug_log_lwt (Printf.sprintf "[livereload (osx-fsevents)] %s%!" local_path) >>= fun _ ->
           change_cb local_path >>= fun _ ->
-          Lwt.return ()
-
+          Lwt.return ())
   in
 
-  Lwt.async (fun () -> Lwt_stream.iter_s cb_f stream);
+  Lwt.async (fun () -> Lwt_stream.iter_s !cb_f stream);
 
   Cf_lwt.RunLoop.run_thread (fun runloop ->
       Fsevents.schedule_with_run_loop event_stream runloop run_loop_mode;
