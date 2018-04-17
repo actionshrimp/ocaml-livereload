@@ -27,6 +27,10 @@ module ByConn = CCMap.Make(struct
     let compare = Cohttp.Connection.compare
   end)
 
+type conn =
+  { ready : bool
+  ; frames_out_fn : (Websocket_cohttp_lwt.Frame.t option -> unit)
+  }
 
 type handler = Conduit_lwt_unix.flow * Cohttp.Connection.t -> Cohttp_lwt_unix.Request.t -> Cohttp_lwt.Body.t -> (Cohttp.Response.t * Cohttp_lwt.Body.t) Lwt.t
 
@@ -47,7 +51,9 @@ let make_raw_handler
      (handlers |> ByConn.iter (fun c handler ->
           debug_log (Printf.sprintf "[livereload] Telling %s about update to %s\n%!"
                        (Cohttp.Connection.to_string c) path);
-          handler @@ Some (Frame.create ~content:(reload path) ())
+          if handler.ready then
+            handler.frames_out_fn @@ Some (Frame.create ~content:(reload path) ())
+          else ()
         ));
   ),
   (fun conn req body ->
@@ -79,19 +85,30 @@ let make_raw_handler
                  let updated = ByConn.remove (snd conn) handlers in
                  Lwt_mvar.put conn_update_handlers updated)
 
-           | _ -> ()
-       )
+           | _ ->
+             if CCString.find "hello" f.content <> -1 then
+               Lwt.async (fun () ->
+                   debug_log_lwt (Printf.sprintf "[livereload] Client %s is ready \n%!"
+                                    (snd conn |> Cohttp.Connection.to_string))
+                   >>= fun () ->
+                   Lwt_mvar.take conn_update_handlers
+                   >>= fun handlers ->
+                   let updated = (ByConn.update (snd conn) (function Some c -> Some { c with ready = true } | _ -> None) handlers) in
+                   Lwt_mvar.put conn_update_handlers updated
+                 )
+             else
+               ())
+
        >>= fun (resp, body, frames_out_fn) ->
        debug_log_lwt (Printf.sprintf "[livereload] Adding client %s \n%!"
                         (snd conn |> Cohttp.Connection.to_string))
        >>= fun () ->
        Lwt_mvar.take conn_update_handlers
        >>= fun handlers ->
-       let updated = (ByConn.add (snd conn) frames_out_fn handlers) in
+       let updated = (ByConn.add (snd conn) { ready = false; frames_out_fn = frames_out_fn } handlers) in
        Lwt_mvar.put conn_update_handlers updated
        >>= fun () ->
-       Lwt.wrap1 frames_out_fn @@
-       Some (Frame.create ~content:hello ())
+       Lwt.wrap1 frames_out_fn @@ Some (Frame.create ~content:hello ())
        >>= fun () ->
        Lwt.return (resp, (body :> Cohttp_lwt.Body.t))
      | _ -> next conn req body)
@@ -105,7 +122,7 @@ let make_handler
     = let send_update_fn, handler = make_raw_handler ~debug next in
     Lwt.async (fun () -> Backend.make_watcher ~debug path_configs send_update_fn);
     Lwt.async (fun () ->
-        Lwt_unix.sleep 1.0 >>= fun _ ->
+        Lwt_unix.sleep 2.0 >>= fun _ ->
         send_update_fn "/"
       );
     handler
