@@ -1,9 +1,0 @@
-opam-version: "1.2"
-name: "livereload-tests"
-depends: [
-  "jbuilder" {build}
-  "livereload"
-  "opium" {test}
-  "inotify" { os = "linux" }
-  "osx-fsevents" { os = "macos" }
-]

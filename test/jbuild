@@ -1,23 +1,9 @@
 (jbuild_version 1)
 
-
-(executable
- ((name test_server)
-  (public_name test_server)
-  (package livereload-tests)
-  (modules (test_server))
-  (libraries (livereload websocket-lwt.cohttp))))
-
-(executable
- ((name test_files_server)
-  (public_name test_files_server)
-  (package livereload-tests)
-  (modules (test_files_server))
-  (libraries (livereload websocket-lwt.cohttp inotify.lwt))))
-
-(executable
- ((name test_opium_server)
-  (public_name test_opium_server)
-  (package livereload-tests)
-  (modules (test_opium_server))
-  (libraries (livereload websocket-lwt.cohttp inotify.lwt opium))))
+(executables
+ ((libraries
+   (livereload websocket-lwt.cohttp opium))
+  (names
+   (test_server
+    test_files_server
+    test_opium_server))))
