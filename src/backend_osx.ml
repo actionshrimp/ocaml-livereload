@@ -16,11 +16,11 @@ let make_watcher
   let run_loop_mode = Cf.RunLoop.Mode.Default in
 
   let cb_f = ref (fun event ->
-          (* TODO: handle path mapping back to server path *)
-          let local_path = event.Fsevents_lwt.path in
-          debug_log_lwt (Printf.sprintf "[livereload (osx-fsevents)] %s%!" local_path) >>= fun _ ->
-          change_cb local_path >>= fun _ ->
-          Lwt.return ())
+      (* TODO: handle path mapping back to server path *)
+      let local_path = event.Fsevents_lwt.path in
+      debug_log_lwt (Printf.sprintf "[livereload (osx-fsevents)] %s%!" local_path) >>= fun _ ->
+      change_cb local_path >>= fun _ ->
+      Lwt.return ())
   in
 
   Lwt.async (fun () -> Lwt_stream.iter_s !cb_f stream);
