@@ -1,4 +1,4 @@
-opam-version: "1.2"
+opam-version: "2.0"
 name: "livereload"
 version: "0.1"
 maintainer: "Dave Aitken <dave.aitken@gmail.com>"
