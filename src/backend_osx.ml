@@ -25,8 +25,11 @@ let make_watcher
 
   Lwt.async (fun () -> Lwt_stream.iter_s !cb_f stream);
 
-  Cf_lwt.RunLoop.run_thread (fun runloop ->
+  let rt_f = ref (fun runloop ->
       Fsevents.schedule_with_run_loop event_stream runloop run_loop_mode;
       if not (Fsevents.start event_stream)
       then prerr_endline "Failed to start FSEvents stream"
-    ); >>= fun _ -> Lwt.return ();
+    )
+  in
+
+  Cf_lwt.RunLoop.run_thread !rt_f; >>= fun _ -> Lwt.return ();
