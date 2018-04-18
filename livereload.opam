@@ -1,6 +1,6 @@
 opam-version: "2.0"
 name: "livereload"
-version: "0.1"
+version: "~dev"
 maintainer: "Dave Aitken <dave.aitken@gmail.com>"
 authors: "Dave Aitken <dave.aitken@gmail.com>"
 homepage: ""
@@ -14,7 +14,8 @@ depends: [
   "websocket"
   "websocket-lwt"
   "ppx_blob"
-  "inotify" { os = "linux" }
-  "osx-fsevents" { os = "macos" }
+  # Requires opam2 to work
+  # "inotify" { os = "linux" }
+  # "osx-fsevents" { os = "macos" }
   "opium" {test}
 ]

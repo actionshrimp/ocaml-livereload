@@ -2,6 +2,10 @@
 
 Livereload server in ocaml that can live in your webserver process. File watching uses `inotify` on linux and `osx-fsevents` on macos.
 
+## Platform dependencies
+
+You'll need to either `opam install inotify` or `opam install osx-fsevents` depending on your platform. There are some os specific constraints in `livereload.opam` but these unfortunately won't work until the opam2 is the official package format (if you know of a better way to handle this for now, please let me know :D). 
+
 ## Setup
 
 - Create a livereload handler for your server process by calling `Livereload.make_handler` along with config about which files to watch.
